@@ -1,8 +1,8 @@
 package main
 
 import (
-	"chirp/internal/database"
 	"database/sql"
+	"github.com/perttuvep/chirp/internal/database"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +13,7 @@ import (
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	DbQueries      *database.Queries
 }
 
 func main() {
@@ -29,6 +30,8 @@ func main() {
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 	}
+
+	apiCfg.DbQueries = database.New(db)
 
 	mux := http.NewServeMux()
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
