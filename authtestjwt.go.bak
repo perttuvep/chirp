@@ -1,0 +1,116 @@
+package auth_test_jwt
+
+import (
+	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/perttuvep/chirp/internal/auth"
+)
+
+func TestMakeJWT(t *testing.T) {
+	userID := uuid.New()
+	tokenSecret := "testsecret"
+	expiresIn := time.Hour
+
+	tokenString, err := MakeJWT(userID, tokenSecret, expiresIn)
+
+	assert.NoError(t, err)
+	assert.NotEmpty(t, tokenString)
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(tokenSecret), nil
+	})
+
+	assert.NoError(t, err)
+	assert.True(t, token.Valid)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	assert.True(t, ok)
+	assert.Equal(t, userID.String(), claims["sub"])
+	assert.Equal(t, "chirpy", claims["iss"])
+	assert.NotNil(t, claims["iat"])
+	assert.NotNil(t, claims["exp"])
+}
+
+func TestValidateJWT(t *testing.T) {
+	userID := uuid.New()
+	tokenSecret := "testsecret"
+	expiresIn := time.Hour
+
+	tokenString, err := MakeJWT(userID, tokenSecret, expiresIn)
+	assert.NoError(t, err)
+
+	validatedUserID, err := ValidateJWT(tokenString, tokenSecret)
+	assert.NoError(t, err)
+	assert.Equal(t, userID, validatedUserID)
+}
+
+func TestValidateJWT_InvalidSecret(t *testing.T) {
+	userID := uuid.New()
+	tokenSecret := "testsecret"
+	invalidSecret := "invalidsecret"
+	expiresIn := time.Hour
+
+	tokenString, err := MakeJWT(userID, tokenSecret, expiresIn)
+	assert.NoError(t, err)
+
+	_, err = ValidateJWT(tokenString, invalidSecret)
+	assert.Error(t, err)
+}
+
+func TestValidateJWT_ExpiredToken(t *testing.T) {
+	userID := uuid.New()
+	tokenSecret := "testsecret"
+	expiresIn := -time.Hour // Token is already expired
+
+	tokenString, err := MakeJWT(userID, tokenSecret, expiresIn)
+	assert.NoError(t, err)
+
+	_, err = ValidateJWT(tokenString, tokenSecret)
+	assert.Error(t, err)
+}
+
+func TestValidateJWT_InvalidTokenString(t *testing.T) {
+	tokenSecret := "testsecret"
+	invalidTokenString := "invalid.token.string"
+
+	_, err := ValidateJWT(invalidTokenString, tokenSecret)
+	assert.Error(t, err)
+}
+
+func TestValidateJWT_InvalidSubject(t *testing.T) {
+	userID := uuid.New()
+	tokenSecret := "testsecret"
+	expiresIn := time.Hour
+
+	tokenString, err := MakeJWT(userID, tokenSecret, expiresIn)
+	assert.NoError(t, err)
+
+	// Modify the token to have an invalid subject.
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(tokenSecret), nil
+	})
+
+	assert.NoError(t, err)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	assert.True(t, ok)
+
+	claims["sub"] = "invalid-uuid"
+
+	invalidTokenString, err := token.SignedString([]byte(tokenSecret))
+	assert.NoError(t, err)
+
+	_, err = ValidateJWT(invalidTokenString, tokenSecret)
+	assert.Error(t, err)
+}
+
+func TestValidateJWT_EmptyToken(t *testing.T) {
+	tokenSecret := "testsecret"
+	_, err := ValidateJWT("", tokenSecret)
+	assert.Error(t, err)
+}

@@ -1,0 +1,8 @@
+# Set to true to use lowercase keywords instead of uppercase.
+lowercaseKeywords: false
+connections:
+  - alias: psql
+    driver: postgresql
+    dataSourceName: postgres://postgres:@localhost:5432/chirpy?sslmode=disable 
+
+

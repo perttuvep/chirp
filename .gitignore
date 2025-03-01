@@ -1,2 +1,4 @@
 assets/
 .env
+sqls.yml
+sqlc*

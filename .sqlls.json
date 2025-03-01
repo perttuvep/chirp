@@ -1,0 +1,8 @@
+{
+  "connections": [
+    {
+      "name": "Chirpy Postgres",
+      "uri": "postgres://postgres:@localhost:5432/chirpy?sslmode=disable"
+    }
+  ]
+}

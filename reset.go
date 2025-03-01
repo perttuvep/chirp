@@ -1,9 +1,20 @@
 package main
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits.Store(0)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Hits reset to 0"))
+	if cfg.platform == "dev" {
+		w.WriteHeader(http.StatusOK)
+		err := cfg.DbQueries.ResetUsers(r.Context())
+		if err != nil {
+			log.Printf("reset users %v", err)
+		}
+		w.Write([]byte("Users&chirps reset"))
+	} else {
+		w.WriteHeader(http.StatusForbidden)
+	}
+
 }
