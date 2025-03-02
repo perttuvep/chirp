@@ -89,7 +89,7 @@ func (q *Queries) GetRTokenByUID(ctx context.Context, userID uuid.UUID) (Refresh
 }
 
 const getUserFromRTkon = `-- name: GetUserFromRTkon :one
-SELECT id, users.created_at, users.updated_at, email, hashed_pass, token, refresh_tokens.created_at, refresh_tokens.updated_at, user_id, expires_at, revoked_at FROM users INNER JOIN refresh_tokens on refresh_tokens(user_id) = users(id) WHERE refresh_tokens(token) = $1
+SELECT id, users.created_at, users.updated_at, email, hashed_pass, is_chirpy_red, token, refresh_tokens.created_at, refresh_tokens.updated_at, user_id, expires_at, revoked_at FROM users INNER JOIN refresh_tokens on refresh_tokens(user_id) = users(id) WHERE refresh_tokens(token) = $1
 `
 
 type GetUserFromRTkonRow struct {
@@ -98,6 +98,7 @@ type GetUserFromRTkonRow struct {
 	UpdatedAt   time.Time
 	Email       string
 	HashedPass  string
+	IsChirpyRed bool
 	Token       string
 	CreatedAt_2 time.Time
 	UpdatedAt_2 time.Time
@@ -115,6 +116,7 @@ func (q *Queries) GetUserFromRTkon(ctx context.Context, token string) (GetUserFr
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPass,
+		&i.IsChirpyRed,
 		&i.Token,
 		&i.CreatedAt_2,
 		&i.UpdatedAt_2,

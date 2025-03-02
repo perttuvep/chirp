@@ -11,6 +11,28 @@ import (
 	"github.com/google/uuid"
 )
 
+const chirpyRedDisableByID = `-- name: ChirpyRedDisableByID :exec
+UPDATE users
+    SET is_chirpy_red = false, updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) ChirpyRedDisableByID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, chirpyRedDisableByID, id)
+	return err
+}
+
+const chirpyRedEnableByID = `-- name: ChirpyRedEnableByID :exec
+UPDATE users
+    SET is_chirpy_red = true, updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) ChirpyRedEnableByID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, chirpyRedEnableByID, id)
+	return err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, created_at, updated_at, email, hashed_pass)
 VALUES (
@@ -20,7 +42,7 @@ VALUES (
     $1,
     $2
 )
-RETURNING id, created_at, updated_at, email, hashed_pass
+RETURNING id, created_at, updated_at, email, hashed_pass, is_chirpy_red
 `
 
 type CreateUserParams struct {
@@ -37,12 +59,40 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPass,
+		&i.IsChirpyRed,
+	)
+	return i, err
+}
+
+const editUserEmail = `-- name: EditUserEmail :one
+UPDATE users
+    SET email = $2, hashed_pass = $3, updated_at = NOW()
+    WHERE id = $1
+RETURNING id, created_at, updated_at, email, hashed_pass, is_chirpy_red
+`
+
+type EditUserEmailParams struct {
+	ID         uuid.UUID
+	Email      string
+	HashedPass string
+}
+
+func (q *Queries) EditUserEmail(ctx context.Context, arg EditUserEmailParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, editUserEmail, arg.ID, arg.Email, arg.HashedPass)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.HashedPass,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, created_at, updated_at, email, hashed_pass FROM users WHERE email = $1
+SELECT id, created_at, updated_at, email, hashed_pass, is_chirpy_red FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -54,12 +104,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPass,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, created_at, updated_at, email, hashed_pass FROM users WHERE id = $1
+SELECT id, created_at, updated_at, email, hashed_pass, is_chirpy_red FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -71,6 +122,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPass,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }

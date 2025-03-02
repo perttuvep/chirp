@@ -20,6 +20,7 @@ type apiConfig struct {
 	DbQueries      *database.Queries
 	platform       string
 	Secret         string
+	Polka_Key      string
 }
 
 type User struct {
@@ -36,6 +37,7 @@ func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	secret := os.Getenv("SECRET")
+	polka := os.Getenv("POLKA_KEY")
 
 	db, err := sql.Open("postgres", dbURL)
 
@@ -49,6 +51,7 @@ func main() {
 	conf := apiConfig{
 		fileserverHits: atomic.Int32{},
 		Secret:         secret,
+		Polka_Key:      polka,
 	}
 
 	conf.platform = os.Getenv("PLATFORM")
@@ -62,14 +65,17 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", conf.handlerGetChirps)
 	mux.HandleFunc("POST /api/chirps", conf.handlerNewChirp)
 	mux.HandleFunc("GET /api/chirps/{id}", conf.handlerGetChirpById)
-	mux.HandleFunc("POST /admin/reset", conf.handlerReset)
-	mux.HandleFunc("GET /admin/metrics", conf.handlerMetrics)
+	mux.HandleFunc("DELETE /api/chirps/{id}", conf.handlerDeleteChirp)
 
 	mux.HandleFunc("POST /api/login", conf.handlerLogin)
 	mux.HandleFunc("POST /api/users", conf.handlerNewUser)
 	mux.HandleFunc("PUT /api/users", conf.handlerEditUser)
 	mux.HandleFunc("POST /api/refresh", conf.handlerRefresh)
 	mux.HandleFunc("POST /api/revoke", conf.handlerRevoke)
+	mux.HandleFunc("POST /api/polka/webhooks", conf.handlerWebHooks)
+
+	mux.HandleFunc("POST /admin/reset", conf.handlerReset)
+	mux.HandleFunc("GET /admin/metrics", conf.handlerMetrics)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

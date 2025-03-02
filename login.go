@@ -25,6 +25,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Email         string    `json:"email"`
 		Token         string    `json:"token"`
 		Refresh_token string    `json:"refresh_token"`
+		IsChirpyRed   bool      `json:"is_chirpy_red"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -39,6 +40,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := cfg.DbQueries.GetUserByEmail(r.Context(), reqparam.Email)
+
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Incorrect email of password", err)
 		return
@@ -71,5 +73,5 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "refresh token db err", err)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, userParams{Id: user.ID.String(), CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: token, Refresh_token: dbrtoken.Token})
+	respondWithJSON(w, http.StatusOK, userParams{Id: user.ID.String(), CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: token, Refresh_token: dbrtoken.Token, IsChirpyRed: user.IsChirpyRed})
 }

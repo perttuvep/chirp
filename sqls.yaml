@@ -3,6 +3,6 @@ lowercaseKeywords: false
 connections:
   - alias: psql
     driver: postgresql
-    dataSourceName: postgres://postgres:@localhost:5432/chirpy?sslmode=disable 
+    dataSourceName: postgres://postgres:pepe89@localhost:5432/chirpy?sslmode=disable 
 
 
